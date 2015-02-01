@@ -30,7 +30,7 @@ class Nasm(object):
         asmcode = asmcode.strip('"').strip("'")
         asmcode = asmcode.replace(";", "\n")
         asmcode = ("BITS %d\n" % mode) + asmcode
-        asmcode = asmcode.decode('string_escape')
+        asmcode = asmcode.decode('unicode_escape')
         asmcode = re.sub("PTR|ptr|ds:|DS:", "", asmcode)
         infd = tmpfile()
         outfd = tmpfile()

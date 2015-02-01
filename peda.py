@@ -159,7 +159,7 @@ class PEDA(object):
         else:
             out = gdb.history(0).__str__()
             out = out.encode('ascii', 'ignore')
-            out = out.decode('string_escape')
+            out = out.decode('unicode_escape')
             return out.strip()
 
     def string_to_argv(self, str):
@@ -176,7 +176,7 @@ class PEDA(object):
             str = str.encode('ascii', 'ignore')
         except:
             pass
-        str = str.decode('string_escape')
+        str = str.decode('unicode_escape')
         args = shlex.split(str)
         # need more processing here
         for idx, a in enumerate(args):
@@ -473,7 +473,7 @@ class PEDA(object):
         """
 
         (arch, bits) = self.getarch()
-        return bits/8
+        return bits//8
 
     def getregs(self, reglist=None):
         """
@@ -854,17 +854,17 @@ class PEDA(object):
         if not self.execute_redirect("x/x 0x%x" % pc):
             return None
 
-        prev_code = self.prev_inst(pc, count/2-1)
+        prev_code = self.prev_inst(pc, count//2-1)
         if prev_code:
             start = prev_code[0][0]
         else:
             start = pc
         if start == pc:
-            count = count/2
+            count = count//2
 
         code = self.execute_redirect("x/%di 0x%x" % (count, start))
         if "0x%x" % pc not in code:
-            code = self.execute_redirect("x/%di 0x%x" % (count/2, pc))
+            code = self.execute_redirect("x/%di 0x%x" % (count//2, pc))
 
         return code.rstrip()
 
@@ -937,7 +937,7 @@ class PEDA(object):
                 for v in matches:
                     if v.startswith("+"):
                         offset = to_int(v[1:])
-                        if offset is not None and (offset/4) > l:
+                        if offset is not None and (offset//4) > l:
                             continue
                     argc += 1
             else: # try with push style
@@ -1766,7 +1766,7 @@ class PEDA(object):
         length = min(len(mem), len(buf))
         result = {}
         lineno = 0
-        for i in range(length/line_len):
+        for i in range(length//line_len):
             diff = 0
             bytes = []
             for j in range(line_len):
@@ -2004,7 +2004,7 @@ class PEDA(object):
             out = self.execute_redirect("x/%sx 0x%x" % ("g" if bits == 64 else "w", value))
             if out:
                 v = out.split(":")[1].strip()
-                if is_printable(int2hexstr(to_int(v), bits/8)):
+                if is_printable(int2hexstr(to_int(v), bits//8)):
                     out = self.execute_redirect("x/s 0x%x" % value)
             return out
 
@@ -2596,7 +2596,7 @@ class PEDA(object):
         if rop:
             result = {}
             for (a, v) in candidates:
-                gadget = self._verify_rop_gadget(a, a+len(v)/2 - 1)
+                gadget = self._verify_rop_gadget(a, a+len(v)//2 - 1)
                 # gadget format: [(address, asmcode), (address, asmcode), ...]
                 if gadget != []:
                     blen = gadget[-1][0] - gadget[0][0] + 1
@@ -2609,7 +2609,7 @@ class PEDA(object):
         else:
             result = []
             for (a, v) in candidates:
-                asmcode = self.execute_redirect("disassemble 0x%x, 0x%x" % (a, a+(len(v)/2)))
+                asmcode = self.execute_redirect("disassemble 0x%x, 0x%x" % (a, a+(len(v)//2)))
                 if asmcode:
                     asmcode = "\n".join(asmcode.splitlines()[1:-1])
                     matches = re.findall(".*:([^\n]*)", asmcode)
@@ -2716,7 +2716,7 @@ class PEDA(object):
                     offset = to_int("0x" + v.decode('hex')[2:5][::-1].encode('hex'))
                 elif v.startswith("83"):
                     offset = to_int("0x" + v[4:6])
-                gg = self._verify_rop_gadget(a, a+len(v)/2-1)
+                gg = self._verify_rop_gadget(a, a+len(v)//2-1)
                 for (_, c) in gg:
                     if "pop" in c:
                         offset += 4
@@ -2818,7 +2818,7 @@ class PEDA(object):
             if len(search) %2 != 0:
                 search = "0" + search
             search = search.decode('hex')[::-1]
-        search = search.decode('string_escape')
+        search = search.decode('unicode_escape')
         while search != "":
             l = len(search)
             i = substr(search, mem)
@@ -3362,7 +3362,7 @@ class PEDACmd(object):
 
         dist = end - start
         text = "From 0x%x%s to 0x%x: " % (start, " (SP)" if start == sp else "",  end)
-        text += "%d bytes, %d dwords%s" % (dist, dist/4, " (+%d bytes)" % (dist%4) if (dist%4 != 0) else "")
+        text += "%d bytes, %d dwords%s" % (dist, dist//4, " (+%d bytes)" % (dist%4) if (dist%4 != 0) else "")
         msg(text)
 
         return
@@ -4230,7 +4230,7 @@ class PEDACmd(object):
                             text += " | %s\n" % line.strip()
                     text = format_disasm_code(text, pc) + "\n"
                     text += " |->"
-                    code = peda.get_disasm(jumpto, count/2)
+                    code = peda.get_disasm(jumpto, count//2)
                     if not code:
                         code = "   Cannot evaluate jump destination\n"
 
@@ -4397,7 +4397,7 @@ class PEDACmd(object):
             data = hex2str(to_int(data), peda.intsize())
         data = data.replace("\\\\", "\\")
         if end_address:
-            data = data*((end_address-address+1)/len(data))
+            data = data*((end_address-address+1)//len(data))
         bytes = peda.writemem(address, data)
         if bytes >= 0:
             msg("Written %d bytes to 0x%x" % (bytes, address))
@@ -5281,7 +5281,7 @@ class PEDACmd(object):
                 ranges = peda.get_vmrange(a)
                 text = "%s : offset %4d - size %4d" % (to_address(a), o, l)
                 if ranges[3] == "[stack]":
-                    text += " ($sp + %s [%d dwords])" % (to_hex(a-sp), (a-sp)/4)
+                    text += " ($sp + %s [%d dwords])" % (to_hex(a-sp), (a-sp)//4)
                 else:
                     text += " (%s)" % ranges[3]
                 msg(text)
@@ -5299,7 +5299,7 @@ class PEDACmd(object):
                 ranges = peda.get_vmrange(a)
                 text = "%s : %s" % (to_address(a), to_address(v))
                 if ranges[3] == "[stack]":
-                    text += " ($sp + %s [%d dwords])" % (to_hex(a-sp), (a-sp)/4)
+                    text += " ($sp + %s [%d dwords])" % (to_hex(a-sp), (a-sp)//4)
                 else:
                     text += " (%s)" % ranges[3]
                 msg(text)

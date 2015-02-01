@@ -6,6 +6,7 @@
 #       License: see LICENSE file for details
 #
 
+from __future__ import print_function
 import tempfile
 import pprint
 import inspect
@@ -24,6 +25,14 @@ import functools
 from subprocess import *
 import config
 
+def freeze(x):
+    if isinstance(x, (list, tuple)):
+        return tuple(map(freeze, x))
+    if isinstance(x, dict):
+        return tuple((k, freeze(v)) for k, v in x.items())
+    else:
+        return x
+
 # http://wiki.python.org/moin/PythonDecoratorLibrary#Memoize
 # http://stackoverflow.com/questions/8856164/class-decorator-decorating-method-in-python
 class memoized(object):
@@ -40,13 +49,13 @@ class memoized(object):
 
     def __call__(self, *args, **kwargs):
         try:
-            return self.cache[(self.func, self.instance, args) + tuple(kwargs.items())]
+            return self.cache[freeze((self.func, self.instance, args) + tuple(kwargs.items()))]
         except KeyError:
             if self.instance is None:
                 value = self.func(*args, **kwargs)
             else:
                 value = self.func(self.instance, *args, **kwargs)
-            self.cache[(self.func, self.instance, args) + tuple(kwargs.items())] = value
+            self.cache[freeze((self.func, self.instance, args) + tuple(kwargs.items()))] = value
             return value
         except TypeError:
             # uncachable -- for instance, passing a list as an argument.
@@ -70,7 +79,7 @@ class memoized(object):
 
     def _reset(self):
         """Reset the cache"""
-        for cached in self.cache.keys():
+        for cached in list(self.cache.keys()):
             if cached[0] == self.func and cached[1] == self.instance:
                 del self.cache[cached]
 
@@ -182,9 +191,9 @@ class message(object):
             teefd = config.Option.get("_teefd")
 
         if isinstance(text, str) and "\x00" not in text:
-            print >> self.out, colorize(text, color, attrib)
+            print(colorize(text, color, attrib), file=self.out)
             if teefd:
-                print >> teefd, colorize(text, color, attrib)
+                print(colorize(text, color, attrib), file=teefd)
         else:
             pprint.pprint(text, self.out)
             if teefd:
@@ -359,7 +368,7 @@ def hex2str(hexnum, intsize=4):
     s = hexnum[2:]
     if len(s) % 2 != 0:
         s = "0" + s
-    result = s.decode('hex')[::-1]
+    result = bytes.fromhex(s).decode('latin1')[::-1]
     return result
 
 def int2hexstr(num, intsize=4):
@@ -395,7 +404,7 @@ def str2intlist(data, intsize=4):
     Convert a string to list of int
     """
     result = []
-    data = data.decode('string_escape')[::-1]
+    data = data.decode('unicode_escape')[::-1]
     l = len(data)
     data = ("\x00" * (intsize - l%intsize) + data) if l%intsize != 0 else data
     for i in range(0, l, intsize):
