@@ -14,7 +14,12 @@ import struct
 import string
 import re
 import itertools
-import StringIO
+try:
+    import StringIO
+    stringio = StringIO
+except:
+    import io
+    stringio = io
 import functools
 from subprocess import *
 import config
@@ -90,7 +95,7 @@ def reset_cache(module=None):
 
 def tmpfile(pref="peda-"):
     """Create and return a temporary file with custom prefix"""
-    return tempfile.NamedTemporaryFile(prefix=pref)
+    return tempfile.NamedTemporaryFile(prefix=pref, mode='w+')
 
 def colorize(text, color=None, attrib=None):
     """
@@ -158,7 +163,7 @@ class message(object):
 
         # If we are still using stdio we need to change it.
         if not self.buffering:
-            self.out = StringIO.StringIO()
+            self.out = stringio.StringIO()
         self.buffering += 1
 
     def flush(self):
@@ -209,14 +214,14 @@ def trim(docstring):
     # and split into a list of lines:
     lines = docstring.expandtabs().splitlines()
     # Determine minimum indentation (first line doesn't count):
-    indent = sys.maxint
+    indent = 1<<29
     for line in lines[1:]:
         stripped = line.lstrip()
         if stripped:
             indent = min(indent, len(line) - len(stripped))
     # Remove indentation (first line is special):
     trimmed = [lines[0].strip()]
-    if indent < sys.maxint:
+    if indent < (1<<29):
         for line in lines[1:]:
             trimmed.append(line[indent:].rstrip())
     # Strip off trailing and leading blank lines:

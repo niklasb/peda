@@ -9,7 +9,7 @@
 import random
 import socket
 import struct
-import httplib
+#import httplib
 from utils import msg, error_msg
 
 shellcode_x86_linux = {

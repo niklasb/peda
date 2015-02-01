@@ -19,8 +19,6 @@ try:
 except:
     import pickle
 
-if sys.version[0] == "3":
-    raise Exception("Python3 is not supported at the moment, downgrade you GDB or recompile with Python2!")
 
 # point to absolute path of peda.py
 PEDAFILE = os.path.abspath(os.path.expanduser(__file__))
@@ -3019,7 +3017,7 @@ class PEDACmd(object):
         else:
             if cmd in self.commands:
                 func = getattr(self, cmd)
-                lines = trim(func.func_doc).splitlines()
+                lines = trim(func.__doc__).splitlines()
                 helptext += green(lines[0]) + "\n"
                 for line in lines[1:]:
                     if "Usage:" in line:
